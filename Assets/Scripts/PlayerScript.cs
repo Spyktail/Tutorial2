@@ -27,10 +27,15 @@ public class PlayerScript : MonoBehaviour
     
     private int hurtNoiseNumber;
     Animator anim;
-    private bool isDead = false;
+    
     private bool isFacingRight = true;
-    private bool isTouchingFloor = true;
-    private int JumpState = 0;
+    private bool isOnGround;
+    public Transform groundcheck;
+    public float checkRadius;
+    public LayerMask allGround;
+    public float jumpForce;
+    public Text controls;
+
  
 
     // Start is called before the first frame update
@@ -43,10 +48,11 @@ public class PlayerScript : MonoBehaviour
        livesText.text = $"Lives: {lives}";
        displayScore = 0;
        playerPlayer2.clip = bGMusic;
+       playerPlayer2.volume = 0.25f;
         playerPlayer2.Play();
         playerPlayer2.loop = true;
-       
-       anim = GetComponent<Animator>();
+        anim = GetComponent<Animator>();
+        controls.text = "WASD to Move. ESC to Close.";
        
     }
 void Flip()
@@ -89,20 +95,23 @@ public void hurtNoise()
         float vertMovement = Input.GetAxis("Vertical");
         rd2d.AddForce(new Vector2(hozMovement * speed, vertMovement * speed));
         
+        isOnGround = Physics2D.OverlapCircle(groundcheck.position, checkRadius, allGround);
 
-        if (Input.GetKey("escape"))
+        if (isOnGround == false)
         {
-            Application.Quit();
+            anim.SetBool("isOnGround", false);
+        }
+        else if (isOnGround == true)
+        {
+            anim.SetBool("isOnGround", true);
         }
 
         if (lives == 0)
         {
             speed = 0;
             gameEndText.text = "You Lose!  by David Rodgers";
-            anim.SetBool("isDead", true);
-                
-                playerPlayer2.Stop();
-                playerPlayer2.PlayOneShot(dieSFX, 0.9f);
+            
+             
         }
 
         if (isFacingRight == false && hozMovement > 0)
@@ -114,7 +123,23 @@ else if (isFacingRight == true && hozMovement < 0)
      Flip();
    }
 
-if (Input.GetKeyDown(KeyCode.A))
+    if (Input.GetKey(KeyCode.A))
+
+        {
+
+
+          anim.SetInteger("LeftState", 1);
+
+         }
+     else
+        {
+
+
+          anim.SetInteger("LeftState", 0);
+
+         }
+
+         if (Input.GetKey(KeyCode.D))
 
         {
 
@@ -122,9 +147,7 @@ if (Input.GetKeyDown(KeyCode.A))
           anim.SetInteger("State", 1);
 
          }
-
-     if (Input.GetKeyUp(KeyCode.A))
-
+     else
         {
 
 
@@ -132,45 +155,6 @@ if (Input.GetKeyDown(KeyCode.A))
 
          }
 
-         if (Input.GetKeyDown(KeyCode.D))
-
-        {
-
-
-          anim.SetInteger("State", 1);
-
-         }
-
-     if (Input.GetKeyUp(KeyCode.D))
-
-        {
-
-
-          anim.SetInteger("State", 0);
-
-         }
-         if (Input.GetKeyDown(KeyCode.W))
-
-        {
-            bool isTouchingFloor = false; 
-            anim.SetBool("isTouchingFloor", false);
-          anim.SetInteger("JumpState", 1);
-
-         }
-
-     if (Input.GetKeyUp(KeyCode.W))
-
-        {
-
-
-          anim.SetInteger("JumpState", 0);
-
-         }
-
-    if (isTouchingFloor == true)
-    {
-        anim.SetInteger("JumpState", 0);
-    }
     }
            
 private void OnTriggerEnter2D(Collider2D other)
@@ -186,6 +170,7 @@ private void OnTriggerEnter2D(Collider2D other)
           if (scoreValue == 4)
         {
             transform.position = new Vector2(55.0f, 25.0f);
+            controls.text = "";
                         
 
             if (lives < 3)
@@ -214,8 +199,10 @@ private void OnTriggerEnter2D(Collider2D other)
 
            if (lives == 0)
         {
+            controls.text = "";
                 playerPlayer2.Stop();
                 playerPlayer2.PlayOneShot(dieSFX, 0.9f);
+                anim.SetBool("isDead", true);
         }
      }
 } 
@@ -226,13 +213,12 @@ private void OnTriggerEnter2D(Collider2D other)
 private void OnCollisionStay2D(Collision2D collision)
     {
         
-        if (collision.collider.tag == "Floor")
+        if (collision.collider.tag == "Floor" && isOnGround)
         {
-            anim.SetBool("isTouchingFloor", true);
-            bool isTouchingFloor = true;
+            
             if (Input.GetKey(KeyCode.W))
             {
-                rd2d.AddForce(new Vector2(0, 5), ForceMode2D.Impulse);
+                rd2d.AddForce(new Vector2(0, jumpForce), ForceMode2D.Impulse);
             }
         }
     }
